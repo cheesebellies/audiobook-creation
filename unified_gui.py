@@ -1,19 +1,14 @@
 import os
-os.environ["TKINTER_DISABLE"] = "1"
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, simpledialog
+from tkinter import ttk, filedialog, messagebox
 import threading
 import json
 import atexit
 import shutil
 from pathlib import Path
-
-# You'll need to import these external functions:
 from parse_book import parse
 from generate_audio import *
 from chunk import generate_chunks
-# from chunking_module import create_chunks  # Replace with your actual chunking function
 import simpleaudio
 
 class AudiobookApplication:
@@ -960,8 +955,3 @@ def start_processing(path, threaded, num_threads, device, voices, event):
 def signal_exit(thread, event):
     event.set()
     thread.join()
-
-
-if __name__ == "__main__":
-    app = AudiobookApplication()
-    app.run()
