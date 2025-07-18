@@ -5,6 +5,7 @@ import threading
 import json
 import atexit
 import shutil
+from pydub import AudioSegment
 from pathlib import Path
 from parse_book import parse
 from generate_audio import *
@@ -62,6 +63,13 @@ class AudiobookApplication:
         
         self.current_gui = ProcessingStatusGUI(self)
     
+    def show_export_book(self):
+        """Display the export book GUI"""
+        if self.current_gui:
+            self.current_gui.destroy()
+        
+        self.current_gui = ExportBookGUI(self)
+    
     def run(self):
         """Start the application"""
         self.root.mainloop()
@@ -71,10 +79,10 @@ class MainMenuGUI:
         self.app = app
         self.root = tk.Toplevel(app.root)
         self.root.title("Audiobook Generator")
-        self.root.geometry("500x400")
+        self.root.geometry("500x450")  # Increased height for new button
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
-        self.root.minsize(400, 300)
+        self.root.minsize(400, 350)
         self.root.lift()
         self.root.focus_force()
         self.root.after(100, lambda: self.root.focus_force())
@@ -139,9 +147,18 @@ class MainMenuGUI:
         )
         voices_btn.grid(row=2, column=0, pady=button_pady)
         
+        # NEW: Export button
+        export_btn = ttk.Button(
+            button_container, 
+            text="Export Audiobook", 
+            command=self.app.show_export_book,
+            width=button_width
+        )
+        export_btn.grid(row=3, column=0, pady=button_pady)
+        
         # Separator
         separator = ttk.Separator(button_container, orient="horizontal")
-        separator.grid(row=3, column=0, sticky="EW", pady=20)
+        separator.grid(row=4, column=0, sticky="EW", pady=20)
         
         # Exit button
         exit_btn = ttk.Button(
@@ -150,7 +167,7 @@ class MainMenuGUI:
             command=self.on_closing,
             width=button_width
         )
-        exit_btn.grid(row=4, column=0, pady=button_pady)
+        exit_btn.grid(row=5, column=0, pady=button_pady)
         
         # Status bar
         status_frame = ttk.Frame(mainframe)
@@ -939,6 +956,193 @@ class VoiceEditorGUI:
     def destroy(self):
         """Clean up the window"""
         self.root.destroy()
+
+class ExportBookGUI:
+    def __init__(self, app):
+        self.app = app
+        self.root = tk.Toplevel(app.root)
+        self.root.title("Export Audiobook")
+        self.root.geometry("800x400")
+        self.root.rowconfigure(0, weight=1)
+        self.root.columnconfigure(0, weight=1)
+        self.root.minsize(400, 300)
+        self.root.lift()
+        self.root.focus_force()
+        self.root.after(100, lambda: self.root.focus_force())
+        
+        self.book_dir = None
+        self.output_path = None
+        self.output_var = tk.StringVar(value="Select a book directory to begin")
+        
+        self.build_ui()
+    
+    def build_ui(self):
+        mainframe = ttk.Frame(self.root, padding="20")
+        mainframe.grid(row=0, column=0, sticky="NSEW")
+        
+        # Configure grid weights
+        for i in range(6):
+            mainframe.rowconfigure(i, weight=1)
+        mainframe.columnconfigure(1, weight=1)
+        
+        # Title
+        title_label = ttk.Label(mainframe, text="Export Audiobook to MP3", font=("Arial", 14, "bold"))
+        title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
+        
+        # Book directory selection
+        ttk.Label(mainframe, text="Book Directory:").grid(row=1, column=0, sticky="W")
+        self.book_dir_label = ttk.Label(mainframe, text="No directory selected", foreground="gray")
+        self.book_dir_label.grid(row=1, column=1, sticky="W", padx=(10, 0))
+        ttk.Button(mainframe, text="Browse", command=self.browse_book_directory).grid(row=1, column=2, sticky="E")
+        
+        # Output file selection
+        ttk.Label(mainframe, text="Output MP3:").grid(row=2, column=0, sticky="W")
+        self.output_path_label = ttk.Label(mainframe, text="No output file selected", foreground="gray")
+        self.output_path_label.grid(row=2, column=1, sticky="W", padx=(10, 0))
+        ttk.Button(mainframe, text="Browse", command=self.browse_output_path).grid(row=2, column=2, sticky="E")
+        
+        # Status
+        ttk.Label(mainframe, text="Status:").grid(row=3, column=0, sticky="W")
+        self.status_label = ttk.Label(mainframe, textvariable=self.output_var, foreground="white")
+        self.status_label.grid(row=3, column=1, columnspan=2, sticky="W", padx=(10, 0))
+        
+        # Buttons
+        button_frame = ttk.Frame(mainframe)
+        button_frame.grid(row=4, column=0, columnspan=3, pady=20)
+        button_frame.columnconfigure((0, 1, 2), weight=1)
+        
+        ttk.Button(button_frame, text="Back", command=self.app.show_main_menu).grid(row=0, column=0, sticky="W")
+        
+        self.export_btn = ttk.Button(button_frame, text="Export to MP3", command=self.start_export)
+        self.export_btn.grid(row=0, column=1)
+        self.export_btn.config(state="disabled")
+        
+        # Progress info
+        info_frame = ttk.LabelFrame(mainframe, text="Information")
+        info_frame.grid(row=5, column=0, columnspan=3, sticky="EW", pady=(10, 0))
+        
+        info_text = ("This will combine all WAV files in the book's audio directory "
+                    "into a single MP3 file. Files will be combined in alphabetical order.")
+        ttk.Label(info_frame, text=info_text, wraplength=500).grid(row=0, column=0, sticky="W", padx=10, pady=10)
+    
+    def browse_book_directory(self):
+        """Browse for book directory"""
+        directory = filedialog.askdirectory(
+            title="Select Book Directory", 
+            initialdir=Path('books')
+        )
+        
+        if directory:
+            book_path = Path(directory)
+            audio_path = book_path / "audio"
+            
+            if not audio_path.exists():
+                messagebox.showerror("Error", f"Audio directory not found: {audio_path}")
+                return
+            
+            # Check for WAV files
+            wav_files = list(audio_path.glob("*.wav"))
+            if not wav_files:
+                messagebox.showwarning("Warning", f"No WAV files found in: {audio_path}")
+                return
+            
+            self.book_dir = book_path
+            self.book_dir_label.config(text=str(book_path.name), foreground="white")
+            self.output_var.set(f"Found {len(wav_files)} WAV files ready for export")
+            
+            # Auto-suggest output filename
+            suggested_name = f"{book_path.name}_audiobook.mp3"
+            self.output_path = book_path / suggested_name
+            self.output_path_label.config(text=suggested_name, foreground="white")
+            
+            self.update_export_button()
+    
+    def browse_output_path(self):
+        """Browse for output MP3 file"""
+        if not self.book_dir:
+            messagebox.showwarning("Warning", "Please select a book directory first")
+            return
+        
+        initial_name = f"{self.book_dir.name}_audiobook.mp3"
+        file_path = filedialog.asksaveasfilename(
+            title="Save MP3 As",
+            defaultextension=".mp3",
+            initialfile=initial_name,
+            filetypes=[("MP3 Files", "*.mp3"), ("All Files", "*.*")]
+        )
+        
+        if file_path:
+            self.output_path = Path(file_path)
+            self.output_path_label.config(text=self.output_path.name, foreground="white")
+            self.update_export_button()
+    
+    def update_export_button(self):
+        """Enable export button when both paths are selected"""
+        if self.book_dir and self.output_path:
+            self.export_btn.config(state="normal")
+        else:
+            self.export_btn.config(state="disabled")
+    
+    def combine_wavs_to_mp3(self, wav_dir, output_mp3_path):
+        """Combine WAV files into MP3"""
+        combined = AudioSegment.empty()
+        wav_files = sorted([f for f in os.listdir(wav_dir) if f.lower().endswith(".wav")])
+        
+        total_files = len(wav_files)
+        
+        for i, fname in enumerate(wav_files):
+            path = os.path.join(wav_dir, fname)
+            audio = AudioSegment.from_wav(path)
+            combined += audio
+            
+            # Update status
+            progress = (i + 1) / total_files * 100
+            self.root.after(0, lambda p=progress, f=fname: 
+                          self.output_var.set(f"Processing: {f} ({p:.1f}%)"))
+        
+        # Export to MP3
+        self.root.after(0, lambda: self.output_var.set("Exporting to MP3..."))
+        combined.export(output_mp3_path, format="mp3")
+    
+    def start_export(self):
+        """Start the export process"""
+        if not self.book_dir or not self.output_path:
+            messagebox.showwarning("Warning", "Please select both book directory and output file")
+            return
+        
+        # Disable UI during export
+        self.export_btn.config(state="disabled")
+        self.output_var.set("Starting export...")
+        
+        def export_thread():
+            try:
+                audio_dir = self.book_dir / "audio"
+                self.combine_wavs_to_mp3(str(audio_dir), str(self.output_path))
+                
+                # Success message
+                self.root.after(0, lambda: self.output_var.set("Export completed successfully!"))
+                self.root.after(0, lambda: messagebox.showinfo(
+                    "Export Complete", 
+                    f"Audiobook exported to:\n{self.output_path}"
+                ))
+                
+            except Exception as e:
+                self.root.after(0, lambda: self.output_var.set("Export failed!"))
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Export Error", 
+                    f"Failed to export audiobook:\n{str(e)}"
+                ))
+            finally:
+                # Re-enable button
+                self.root.after(0, lambda: self.export_btn.config(state="normal"))
+        
+        # Run export in separate thread
+        threading.Thread(target=export_thread, daemon=True).start()
+    
+    def destroy(self):
+        """Clean up the window"""
+        self.root.destroy()
+
 
 def start_processing(path, threaded, num_threads, device, voices, event):
     gen = Generate(
