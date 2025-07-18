@@ -4,11 +4,6 @@ from pathlib import Path
 import os
 import csv
 
-# TODO:
-# [X] Use token sentence_id, paragraph_id, byte onset/offset to calculate chars
-# [x] Export as JSON
-
-
 def import_data(src_path: os.PathLike) -> tuple:
     src_path = Path(src_path) / "parsed"
     quotes_path = src_path / "book.quotes"
@@ -157,7 +152,7 @@ def export_chunks(charchunks: list, dest_path: os.PathLike):
     with open(os.path.join(dest_path, 'chunks.json'), 'w', encoding='utf-8') as f:
         json.dump(tr, f, ensure_ascii=True, indent=2)
 
-def generate_chunks(src_path: os.PathLike, scene_names: dict, multivoice: bool = True, min_length: int = 5, max_length: int = 100, passes: int = 2):
+def generate_chunks(src_path: os.PathLike, scene_names: dict, multivoice: bool = True, min_length: int = 5, max_length: int = 100, passes: int = 8):
     """
     Having more context in the TTS prompt usually improves quality, but after around 100 words, it only degrades quality.
 
