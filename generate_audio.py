@@ -9,6 +9,13 @@ import torchaudio as ta
 import gc
 import time
 import numpy as np
+import tqdm
+_tqdm = tqdm.tqdm
+def tqdmr(*args, **kwargs):
+    kwargs['disable'] = True
+    return _tqdm(*args, **kwargs)
+tqdm.tqdm= tqdmr
+
 from chatterbox import ChatterboxTTS
 import perth
 from typing import Optional
