@@ -162,7 +162,7 @@ class MainMenuGUI:
     
     def resume_audiobook(self):
         """Resume an existing audiobook project"""
-        project_folder = filedialog.askdirectory(title="Select Audiobook Project Folder")
+        project_folder = filedialog.askdirectory(title="Select Audiobook Project Folder", initialdir=Path('books'))
         
         if project_folder:
             self.app.show_processing_gui(project_folder)
@@ -637,7 +637,7 @@ class ProcessingGUI:
         print(f"  Source path: {self.book_path}")
         print(f"  Threading enabled: {use_threading}")
         print(f"  Number of threads: {num_threads}")
-        print(f"  Device: {device}")
+        print(f"  Device: {'cpu' if device == 'default' else device}")
         
         # TODO: Replace this with your actual processing function
         # your_processing_function(self.book_path, use_threading, num_threads, device)
@@ -866,9 +866,10 @@ class VoiceEditorGUI:
 
     def generate_and_play(self):
         """Generate and play audio sample"""
-        if not hasattr(self, 'reference_file'):
-            messagebox.showwarning("Missing Reference", "Please upload a reference voice file first.")
-            return
+        if hasattr(self, 'reference_file'):
+            self.voice_args.reference_path = self.reference_file
+        else:
+            self.voice_args.reference_path = None
 
         def run():
             self.status_label.config(text="Generating audio sample...")
