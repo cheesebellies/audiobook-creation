@@ -2,8 +2,6 @@ chatterbox-tts
 booknlp
 resemble-perth
 simpleaudio
-torch
-torchaudio
 numpy
 PyMuPDF
 regex
