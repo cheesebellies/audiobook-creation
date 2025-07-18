@@ -9,14 +9,6 @@ import torchaudio as ta
 import gc
 import time
 import numpy as np
-# import tqdm
-# _original_tqdm = tqdm.tqdm
-
-# def tqdm_patched(*args, **kwargs):
-#     kwargs.setdefault('leave', False)
-#     return _original_tqdm(*args, **kwargs)
-
-# tqdm.tqdm = tqdm_patched
 from chatterbox import ChatterboxTTS
 import perth
 from typing import Optional
@@ -76,7 +68,6 @@ class Device:
     def __str__(self):
         return self.device
         
-
 class VoiceArguments:
     def __init__(self, name: str, reference_path: os.PathLike | None = None, exaggeration: float = 0.4, cfg_weight: float = 0.7, temperature: float = 0.7, pitch: float = 0.0):
         self.name = name
@@ -212,7 +203,7 @@ class Generate:
     def __init__(self, device: Device, src_path: os.PathLike, voices_path: os.PathLike | None, max_workers: int = 1, quit_event = None):
 
         self.src_path = Path(src_path)
-        self.voices_path = Path(voices_path) if voices_path else None
+        self.voices_path = Path(voices_path) if voices_path else Path('voices')
         
         self.resetting = SafeEvent()
         self.inv_resetting = SafeEvent()
@@ -504,8 +495,7 @@ class Generate:
         
         generated_indices = [int(f.stem.split('_')[-1]) for f in self.dest_path.glob('chunk_*.wav')]
         indices = [i for i in range(total_chunk_len) if i not in generated_indices]
-        chunks = [chunk for i, chunk in enumerate(chunks) if i not in generated_indices]
-        
+        chunks = [i for j, i in enumerate(chunks) if j not in generated_indices]
         voices = {}
 
         if self.voices_path:
