@@ -356,7 +356,7 @@ class CharacterLabelingGUI:
         tr = []
         voices = Path('voices')
         for i in os.listdir(voices):
-            tr.append(i.name)
+            tr.append(i)
         return tr
     
     def build_ui(self):
