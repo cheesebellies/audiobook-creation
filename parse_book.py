@@ -68,14 +68,12 @@ def parse(src_path: os.PathLike, dest_path: os.PathLike):
             text_content = f.read()
             source_text = text_content
             text_content = unidecode.unidecode(text_content)
-    # Add quotes to the end of lines that lack them.
-    text_content = re.sub(r'(^(?:(?:"[^"\n]*")|[^"\n"])*"[^"\n]*$)', lambda r: r.group(0) + "\"", text_content,flags=re.MULTILINE)
     #                      |
     #                      |   This motherfucker took me goddamn forever,
     #                      |   (Like literally 5 hours)
     #                      |
     #                      V
-    text_content = re.sub(r'((?: |^)"(?=[^"\n]*? "))(?:([^"\n]*?(?: |\'|"))(")([^"\n]*?)(")((?: |\'|")[^"\n]*?(?R)*))', lambda m: m.group(1) + m.group(2) + "'" + m.group(4) + "'" + m.group(6), text_content, flags=re.MULTILINE)
+    text_content = re.sub(r'((?: |^)"(?=[^"\n]*? "))(?:([^"\n]*?(?: |\'|"))(")([^"\n]*?)(")((?: |\'|")[^"\n]*?))', lambda m: m.group(1) + m.group(2) + "'" + m.group(4) + "'" + m.group(6), text_content, flags=re.MULTILINE)
     text_content = text_content.replace("...", ".").replace("--", ",")
     num_content_lines = len(re.findall(r'^...', text_content, re.MULTILINE))
     num_double_newlines = len(re.findall(r'\n\n^...', text_content, re.MULTILINE))
