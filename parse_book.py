@@ -8,6 +8,8 @@ import regex as re
 import unidecode
 import urllib
 
+# BookNLP hotfix taken from from https://gist.github.com/furkanakkurt1335/735a78c7ed798b419e6deda6e504e8b4
+
 # Removes 'position_ids' from a model's state dict and saves the modified model
 def remove_position_ids_and_save(model_file, device, save_path):
     state_dict = torch.load(model_file, map_location=device)
