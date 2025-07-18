@@ -3,6 +3,7 @@ cd ..
 
 brew install python@3.11
 brew install sox
+brew install ffmpeg
 
 mkdir -p books voices
 
