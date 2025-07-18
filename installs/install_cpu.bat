@@ -17,6 +17,22 @@ start /wait winget install --id=ChrisBagwell.SoX  -e --accept-package-agreements
 set "SOX_DIR=%ProgramFiles(x86)%\sox-14-4-2"
 set "PATH=%SOX_DIR%;%PATH%"
 
+start /wait winget install -e --id Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
+
+for /d %%A in ("%LOCALAPPDATA%\Microsoft\WinGet\Packages\*") do (
+    echo %%A | findstr /i "Gyan.FFmpeg_" >nul
+    if not errorlevel 1 (
+        for /d %%B in ("%%A\*") do (
+            set "FFMPEG_DIR=%%B"
+            REM Break both loops by forcing an exit here
+            goto :loops_done
+        )
+    )
+)
+
+:loops_done
+set "PATH=%FFMPEG_DIR%\bin;%PATH%"
+
 python -m venv .venv
 call .venv\Scripts\activate.bat
 
