@@ -356,7 +356,8 @@ class CharacterLabelingGUI:
         tr = []
         voices = Path('voices')
         for i in os.listdir(voices):
-            tr.append(i)
+            if i != ".DS_Store":
+                tr.append(i)
         return tr
     
     def build_ui(self):
