@@ -507,8 +507,11 @@ class Generate:
 
         if self.voices_path:
             for i in os.listdir(self.voices_path):
-                voice = VoiceArguments.from_file(os.path.join(self.voices_path, i, 'settings.json'))
-                voices[str(i)] = voice
+                try:
+                    voice = VoiceArguments.from_file(os.path.join(self.voices_path, i, 'settings.json'))
+                    voices[str(i)] = voice
+                except:
+                    pass
         if len(voices) < 1:
             voices = {'narrator': self.default_voice}
         
