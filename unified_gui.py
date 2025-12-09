@@ -1087,19 +1087,23 @@ class ExportBookGUI:
     def combine_wavs_to_mp3(self, wav_dir, output_mp3_path):
         """Combine WAV files into MP3"""
         combined = AudioSegment.empty()
+        self.root.after(0, lambda: self.output_var.set("Combining WAVs..."))
         wav_files = sorted([f for f in os.listdir(wav_dir) if f.lower().endswith(".wav")])
         
         total_files = len(wav_files)
         
-        for i, fname in enumerate(wav_files):
-            path = os.path.join(wav_dir, fname)
-            audio = AudioSegment.from_wav(path)
-            combined += audio
+        segments = [AudioSegment.from_wav(os.path.join(wav_dir, f)) for f in wav_files]
+        combined = sum(segments[1:], segments[0]) if segments else AudioSegment.empty()
+
+        # for i, fname in enumerate(wav_files):
+        #     path = os.path.join(wav_dir, fname)
+        #     audio = AudioSegment.from_wav(path)
+        #     combined += audio
             
-            # Update status
-            progress = (i + 1) / total_files * 100
-            self.root.after(0, lambda p=progress, f=fname: 
-                          self.output_var.set(f"Processing: {f} ({p:.1f}%)"))
+        #     # Update status
+        #     progress = (i + 1) / total_files * 100
+        #     self.root.after(0, lambda p=progress, f=fname: 
+        #                   self.output_var.set(f"Processing: {f} ({p:.1f}%)"))
         
         # Export to MP3
         self.root.after(0, lambda: self.output_var.set("Exporting to MP3..."))
